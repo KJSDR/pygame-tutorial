@@ -139,11 +139,13 @@ def horoscope_form():
 
 @app.route('/horoscope_results')
 def horoscope_results():
-    horoscope_sign = request.args.get('sign')
+    name = request.args.get('users_name')
+    horoscope_sign = request.args.get('horoscope_sign')
     users_personality = HOROSCOPE_PERSONALITIES.get(horoscope_sign, 'Unknown personality')
     lucky_number = random.randint(1, 99)
     
     context = {
+        'name': name,
         'horoscope_sign': horoscope_sign,
         'personality': users_personality,
         'lucky_number': lucky_number
