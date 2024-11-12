@@ -15,11 +15,11 @@ class GameObject(pygame.sprite.Sprite):
     def __init__(self, x, y, image):
         super(GameObject, self).__init__()
         self.surf = pygame.image.load(image)
-        self.rect = self.surf.get_rect()
-        self.rect.topleft = (x, y)
+        self.rect = self.surf.get_rect()  # add
+        self.rect.topleft = (x, y)  # set initial position
 
     def render(self, screen):
-        screen.blit(self.surf, self.rect)
+        screen.blit(self.surf, self.rect.topleft)
 
 # Apple class
 class Apple(GameObject):
@@ -52,6 +52,22 @@ class Strawberry(GameObject):
     def reset(self):
         self.rect.x = -64
         self.rect.y = choice(lanes)
+
+# Bomb class
+class Bomb(GameObject):
+    def __init__(self):
+        super(Bomb, self).__init__(0, 0, 'bomb.png')
+        self.dy = (randint(0, 200) / 100) + 1
+        self.reset()
+
+    def move(self):
+        self.rect.y += self.dy
+        if self.rect.y > 500:
+            self.reset()
+
+    def reset(self):
+        self.rect.x = choice(lanes)
+        self.rect.y = -64
 
 # Player class
 class Player(GameObject):
@@ -94,21 +110,21 @@ class Player(GameObject):
         self.rect.x -= (self.rect.x - self.dx) * 0.25
         self.rect.y -= (self.rect.y - self.dy) * 0.25
 
-# Create an instance of Player
+# Create instances of game objects
 player = Player()
 apple = Apple()
 strawberry = Strawberry()
+bomb = Bomb()
 
-# Make a group
+# Make sprite groups
 all_sprites = pygame.sprite.Group()
-# Add sprites to group
-all_sprites.add(player)
-all_sprites.add(apple)
-all_sprites.add(strawberry)
+fruit_sprites = pygame.sprite.Group()
+all_sprites.add(player, apple, strawberry, bomb)
+fruit_sprites.add(apple, strawberry)
 
+# Game loop
 running = True
 while running:
-    # Looks at events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -124,18 +140,30 @@ while running:
             elif event.key == pygame.K_DOWN:
                 player.down()
 
+    # Move sprites
+    apple.move()
+    strawberry.move()
+    bomb.move()
+    player.move()
+
+    # Check Colisions
+    fruit = pygame.sprite.spritecollideany(player, fruit_sprites)
+    if fruit:
+	    fruit.reset()
+
+    # Check collision player and bomb
+    if pygame.sprite.collide_rect(player, bomb):
+	    running = False
+
     # Clear screen
     screen.fill((255, 255, 255))
 
-    # Move and render Sprites
+    # Render sprites
     for entity in all_sprites:
-        entity.move()
         entity.render(screen)
 
     # Update the window
     pygame.display.flip()
 
-    # tick the clock!
+    # Tick the clock
     clock.tick(60)
-
-pygame.quit()
