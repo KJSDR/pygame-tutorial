@@ -1,16 +1,16 @@
 import pygame
-from random import randint
+from random import randint, choice
 
-# Initialize Pygame
 pygame.init()
 
-# Set up the screen
 screen = pygame.display.set_mode([500, 500])
 
 # Get the clock
 clock = pygame.time.Clock()
 
-# Create the GameObject class
+lanes = [93, 218, 343]
+
+# GameObject class
 class GameObject(pygame.sprite.Sprite):
     def __init__(self, x, y, image):
         super(GameObject, self).__init__()
@@ -21,65 +21,94 @@ class GameObject(pygame.sprite.Sprite):
     def render(self, screen):
         screen.blit(self.surf, self.rect)
 
-# Create an Apple class
+# Apple class
 class Apple(GameObject):
     def __init__(self):
         super(Apple, self).__init__(0, 0, 'apple.png')
-        self.dx = 0
         self.dy = (randint(0, 200) / 100) + 1
-        self.reset()  # call reset here!
+        self.reset()
 
     def move(self):
-        self.rect.x += self.dx
         self.rect.y += self.dy
-        # Check the y position of the apple
         if self.rect.y > 500:
             self.reset()
 
-    # add a new method
     def reset(self):
-        self.rect.x = randint(50, 400)
+        self.rect.x = choice(lanes)
         self.rect.y = -64
 
-# Create a Player class
+# Strawberry class
+class Strawberry(GameObject):
+    def __init__(self):
+        super(Strawberry, self).__init__(0, 0, 'strawberry.png')
+        self.dx = (randint(0, 200) / 100) + 1
+        self.reset()
+
+    def move(self):
+        self.rect.x += self.dx
+        if self.rect.x > 500:
+            self.reset()
+
+    def reset(self):
+        self.rect.x = -64
+        self.rect.y = choice(lanes)
+
+# Player class
 class Player(GameObject):
     def __init__(self):
         super(Player, self).__init__(0, 0, 'player.png')
-        self.dx = self.rect.x  # Starting x position
-        self.dy = self.rect.y  # Starting y position
-        self.speed = 5         # Speed of movement
+        self.pos_x = 1
+        self.pos_y = 1
         self.reset()
 
+    def reset(self):
+        self.rect.x = lanes[self.pos_x]
+        self.rect.y = lanes[self.pos_y]
+        self.update_dx_dy()
+
+    def update_dx_dy(self):
+        self.dx = lanes[self.pos_x]
+        self.dy = lanes[self.pos_y]
+
     def left(self):
-        self.dx -= self.speed
+        if self.pos_x > 0:
+            self.pos_x -= 1
+            self.update_dx_dy()
 
     def right(self):
-        self.dx += self.speed
+        if self.pos_x < len(lanes) - 1:
+            self.pos_x += 1
+            self.update_dx_dy()
 
     def up(self):
-        self.dy -= self.speed
+        if self.pos_y > 0:
+            self.pos_y -= 1
+            self.update_dx_dy()
 
     def down(self):
-        self.dy += self.speed
+        if self.pos_y < len(lanes) - 1:
+            self.pos_y += 1
+            self.update_dx_dy()
 
     def move(self):
-        # Use the easing formula to smoothly move towards the target (dx, dy)
         self.rect.x -= (self.rect.x - self.dx) * 0.25
         self.rect.y -= (self.rect.y - self.dy) * 0.25
 
-    def reset(self):
-        self.rect.x = 250 - 32
-        self.rect.y = 250 - 32
-
 # Create an instance of Player
 player = Player()
-
-# Create an instance of Apple
 apple = Apple()
+strawberry = Strawberry()
 
-# Game loop
+# Make a group
+all_sprites = pygame.sprite.Group()
+# Add sprites to group
+all_sprites.add(player)
+all_sprites.add(apple)
+all_sprites.add(strawberry)
+
 running = True
 while running:
+    # Looks at events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -95,19 +124,18 @@ while running:
             elif event.key == pygame.K_DOWN:
                 player.down()
 
-    # Fill the screen with a white background
+    # Clear screen
     screen.fill((255, 255, 255))
 
-    # Draw apple
-    apple.move()
-    apple.render(screen)
-
-    # Draw player 
-    player.move()
-    player.render(screen)
+    # Move and render Sprites
+    for entity in all_sprites:
+        entity.move()
+        entity.render(screen)
 
     # Update the window
     pygame.display.flip()
 
-    # Tick the clock!
+    # tick the clock!
     clock.tick(60)
+
+pygame.quit()
